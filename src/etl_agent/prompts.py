@@ -15,7 +15,7 @@ produce working Python code that performs the ETL process safely, using Bauplan'
 CRITICAL FORMAT RULES:
 1. You MUST ALWAYS start with <reasoning> ... </reasoning>
 2. You MUST ALWAYS follow with <code> ... </code>
-3. You MUST ALWAYS use <packages>package1,package2... </packages> to specify the Python packages you need, comma-separated: do NOT include packages in the standard library.
+3. You MUST ALWAYS use <packages>package1,package2... </packages> to specify the Python packages you need, comma-separated: do NOT include packages in the standard library, do NOT install packages unless they are needed to interact with cloud or Bauplan APIs.
 4. NEVER skip the <reasoning> section
 5. You should follow the Bauplan API usage documentation provided below.
 6. The code snippet should be included in a single try-except block In case of failure, code should return None and print a clear console message. In case of success, return what the user asked for.
@@ -57,14 +57,15 @@ BAUPLAN API USAGE:
 
 USER_PROMPT_TEMPLATE = (
     "You will be performing an ETL process on the data stored in a publicly readable S3 bucket: {s3_raw_bucket}."
-    " No credentials are needed to list files in the bucket and you can assume Bauplan can read from it."
-    " You are tasked to run a Write-Audit-Publish (WAP) process on raw data, leveraging Bauplan branches to sandbox the import and run data quality checks before publishing to the main branch."
+    " No credentials are needed to list files in the bucket and you can assume Bauplan can read from it. The BAUPLAN API key is provided in the environment variable BAUPLAN_API_KEY."
+    " You can use the Bauplan client to retrieve the username you need to create a new branch."
+    " You are tasked to run a Write-Audit-Publish (WAP) process on raw data, leveraging branches to sandbox the import and run data quality checks before publishing to the main branch."
     " In particular, you will:"
     " \n1. List all the parquet files in the S3 bucket."
-    " \n2. Create a new temporary branch in Bauplan for the ETL process, using the timestamp to randomize the branch name. "
+    " \n2. Create a new temporary branch for the ETL process, using the timestamp to randomize the branch name. "
     " \n3. For each file, create a table (replace if it exists) in the temporary branch with the same name as the file using Bauplan APIs, and import the data from the S3 bucket using Bauplan APIs."
     " \n4. Remember to run a basic data quality check on each table after importing. In particular, use Bauplan APIs to check for the existence of an ID column in the schema."
-    " If it exists, use Bauplan querying capabilities and a simple SQL query to check that the ID column has all unique values." 
+    " If it exists, add a simple SQL query to check that the ID column has all unique values." 
     " \n5. If all the data quality checks pass, merge the branch into main and return the temporary branch name." 
     "\n Try to be concise: do not add comments, include all commands inside ONE try and except block, use print statements sparingly only to communicate progress. "
     " If an error occurs, catch it and print a clear console message. "

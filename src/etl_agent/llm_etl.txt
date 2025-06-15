@@ -3,15 +3,18 @@ normally found in a lakehouse: create tables, load data, create a data branch, m
 branch etc.
 
 Everythin in Bauplan happens through the Python client: you usually assume the API key is available as BAUPLAN_API_KEY in the
-environment, so no need to specify it:
+environment, so no need to specify it - from the client you can also get your username.
 
 ```python
 import bauplan
 bpln_client = bauplan.Client()
+user = client.info().user
+username = user.username
 ```
 
 Similar to Git with code, Bauplan support git-for-data workflows, in which data branches are created to sandbox changes, and then merged
-and / or deleted depending on the business logic:
+and / or deleted depending on the business logic. Note that every branch follows the username.branch_name pattern, so you 
+should always create branches that start with username.
 
 ```python
 # create a branch from main
@@ -21,7 +24,6 @@ my_branch = bpln_client.create_branch(
 )
 # do stuff here: load data, run transformations etc., then merge back
 bpln_client.merge_branch(
-    # you can assume username is available as an env as BAUPLAN_USER_NAME
     source_ref='username.my_branch_name',
     into_branch='main',
 )

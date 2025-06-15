@@ -93,7 +93,7 @@ def run_react_loop(
                 print(f"\nIteration {current_iteration + 1} response:")
                 print(f"\n📦 Packages to install: {response.packages}")
                 print(f"\n🤔 Reasoning: {response.reasoning}")
-                print(f"\n🛠️ Code: {response.code[:100]}")
+                print(f"\n🛠️ Code: {response.code[:500]}")
             
             # Store the code in a file for human inspection
             code_file_path = os.path.join(llm_folder, 'etl_agent', f"iteration_{current_iteration}_code.py")
@@ -107,10 +107,7 @@ def run_react_loop(
             print("\n Running the code...")
             executor = E2BCodeExecutor(
                 api_key=eb2_api_key, 
-                envs={
-                    'BAUPLAN_API_KEY': bauplan_api_key,
-                    'BAUPLAN_USER_NAME': bauplan_user_name
-                }
+                envs={'BAUPLAN_API_KEY': bauplan_api_key}
             )
             execution_result: ExecutorResponse = executor.run_code(
                 code=response.code, 
