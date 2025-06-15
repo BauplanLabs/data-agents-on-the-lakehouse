@@ -1,0 +1,75 @@
+Bauplan is a Python-first lakehouse, exposing in pure Python methods under the `bauplan` package all the functionalities
+normally found in a lakehouse: create tables, load data, create a data branch, merge a data branch, run a SQL query over a specific
+branch etc.
+
+Everythin in Bauplan happens through the Python client: you usually assume the API key is available as BAUPLAN_API_KEY in the
+environment, so no need to specify it:
+
+```python
+import bauplan
+bpln_client = bauplan.Client()
+```
+
+Similar to Git with code, Bauplan support git-for-data workflows, in which data branches are created to sandbox changes, and then merged
+and / or deleted depending on the business logic:
+
+```python
+# create a branch from main
+my_branch = bpln_client.create_branch(
+    branch='username.my_branch_name',
+    from_ref='main',
+)
+# do stuff here: load data, run transformations etc., then merge back
+bpln_client.merge_branch(
+    # you can assume username is available as an env as BAUPLAN_USER_NAME
+    source_ref='username.my_branch_name',
+    into_branch='main',
+)
+# delete the branch when not needed anymore
+bpln_client.delete_branch('my_branch_name')
+```
+
+An Iceberg table can be created in a branch starting from a file (or multiple files if large, with the * pattern in S3 URIs):
+
+```python
+table = bpln_client.client.create_table(
+    table='my_table_name',
+    search_uri='s3://path/to/my/files/my_file.parquet',
+    branch='my_branch_name',
+    replace=True
+)
+
+Creating a table does not import any data, only create the table with the schema: to import data you need to run a second
+command:
+
+```python
+plan_state = bpln_clientclient.import_data(
+    table='my_table_name',
+    search_uri='s3://path/to/my/files/my_file.parquet',
+    branch='my_branch_name',
+)
+if plan_state.error:
+   # you should raise an error
+```
+
+Finally, you can inspect tables programmatically through Python methods - and even run SQL queries on them:
+
+```python
+table = bpln_client.get_table(
+    table='my_table_name',
+    ref='my_branch_name',
+)
+
+# loop through the fields and print their name, required, and type
+for c in table.fields:
+    print(c.name, c.required, c.type)
+
+# get data back as a PyArrow table
+my_table : pa.Table = client.query(
+    query='SELECT c1 FROM my_table',
+    ref='my_branch_name',
+)
+
+# efficiently cast the table to a pandas DataFrame to perform compute
+df = my_table.to_pandas()
+```

@@ -8,9 +8,7 @@ setup!
 
 """
 
-def verify_etl_process(
-    bauplan_api_key: str = None,
-    ) -> bool:
+def verify_etl_process() -> bool:
     """
     Verify the correctness of the ETL process by checking the state of the lakehouse.
     We return True if and only if all the tables are in the main branch and they have data inside them.
@@ -22,14 +20,14 @@ def verify_etl_process(
     import pyarrow as pa
     # this assumed the process can access the usual Bauplan local config file
     # or that the proper environment variables are set
-    client = bauplan.Client(api_key=bauplan_api_key)
+    client = bauplan.Client(profile='prod')
     branch = 'main'
     # each table corresponds to a file loaded in the raw S3 bucket
     tables = [
             'acquirer_countries', 
             'payments', 
             'merchant_category_codes',
-            'fees', 
+            'fees',
             'merchant_data'
         ]
     # check for existence and for some data in each table

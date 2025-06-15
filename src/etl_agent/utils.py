@@ -9,7 +9,7 @@ from collections import namedtuple
 from e2b_code_interpreter import Sandbox
 
 # structure to hold parsed response components
-ParsedResponse = namedtuple('ParsedResponse', ['answer', 'reasoning', 'code'])
+ParsedResponse = namedtuple('ParsedResponse', ['done', 'packages', 'reasoning', 'code'])
 
 
 def parse_response(response_text: str) -> ParsedResponse:
@@ -17,24 +17,31 @@ def parse_response(response_text: str) -> ParsedResponse:
     Parse the LLM response and extract reasoning, code, or answer sections: thanks Fede!
     
     We return a structured response with the following fields:
-    - answer: The final answer if present
+    - done: A boolean indicating if the task is complete (if <done> tag is present)
+    - packages: The list of packages to install if present
     - reasoning: The reasoning section if present
     - code: The code section if present
     
     If the response does not conform to the expected format, we raise an error.
     """
     
-    final_answer = None
+    packages = None # this should be a list of packages to install
     reasoning = None
     code = None
-    # Check for final answer
-    if "<answer>" in response_text and "</answer>" in response_text:
-        answer_match = re.search(r"<answer>(.*?)</answer>", response_text, re.DOTALL)
-        if answer_match:
-            final_answer = answer_match.group(1).strip()
+    done = False
+    
+    # Check for <done> tag indicating completion
+    if "<done>" in response_text:
+        done = True
+    
+    # Check for packages
+    if "<packages>" in response_text and '</packages>' in response_text:
+        p_match = re.search(r"<packages>(.*?)</packages>", response_text, re.DOTALL)
+        if p_match:
+            packages = p_match.group(1).strip().split(',')
     
     # Check for reasoning and code sections
-    if "<reasoning>" in response_text and "</reasoning>" in response_text and "<code>" in response_text and "</code>" in response_text:
+    if "<reasoning>" in response_text and '</reasoning>' in response_text and "<code>" in response_text and '</code>' in response_text:
         reasoning_match = re.search(r"<reasoning>(.*?)</reasoning>", response_text, re.DOTALL)
         code_match = re.search(r"<code>(.*?)</code>", response_text, re.DOTALL)
         
@@ -42,10 +49,9 @@ def parse_response(response_text: str) -> ParsedResponse:
             reasoning = reasoning_match.group(1).strip()
             code = code_match.group(1).strip()
             
-    assert (reasoning is not None and code is not None) or final_answer is not None, \
-        f"Response was not valid: {response_text}\n"
+    assert done or (reasoning is not None and code is not None), f"Response was not valid: {response_text}\n"
 
-    return ParsedResponse(answer=final_answer, reasoning=reasoning, code=code)
+    return ParsedResponse(done=done, packages=packages, reasoning=reasoning, code=code)
 
 
 # structure to hold the result of code execution
@@ -62,10 +68,10 @@ class CodeExecutor(ABC):
 # executor if you want to use a different provider / method to run code.  
 class E2BCodeExecutor(CodeExecutor):    
     
-    def __init__(self, api_key):
-        self.sbx = Sandbox(api_key=api_key) 
+    def __init__(self, api_key, envs: list = None):
+        self.sbx = Sandbox(api_key=api_key, envs=envs) 
         
-    def run_code(self, code: str, python_packages: list = None):
+    def run_code(self, code: str, python_packages: list = None) -> ExecutorResponse:
         with self.sbx:
             # Install any required Python packages
             # Note that for example in Together AI sandbox you would pre-prend to the code
@@ -74,7 +80,7 @@ class E2BCodeExecutor(CodeExecutor):
                 for pkg in python_packages:
                     self.sbx.commands.run(f"pip install {pkg}")
             # Run the provided code with stream handlers for stdout and stderr
-            exec = self.sbx.commands.run_code(code,
+            exec = self.sbx.run_code(code,
                 on_stderr=lambda stderr: print("[Code Interpreter]", stderr),
                 on_stdout=lambda stdout: print("[Code Interpreter]", stdout)
             )

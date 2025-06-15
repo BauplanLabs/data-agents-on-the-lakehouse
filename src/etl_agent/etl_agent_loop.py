@@ -8,7 +8,7 @@ fix its own mistakes based on the output of executing the actual code.
 
 import os
 from litellm import completion
-from utils import parse_response, ParsedResponse, E2BCodeExecutor
+from utils import parse_response, ParsedResponse, E2BCodeExecutor, ExecutorResponse
 from dotenv import load_dotenv
 from verifier import verify_etl_process
 from prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
@@ -28,6 +28,7 @@ def run_react_loop(
     templated_user_input: str, 
     s3_raw_bucket: str,
     bauplan_api_key: str,
+    bauplan_user_name: str,
     model_name: str,
     max_tokens: int,
     temperature: float,
@@ -55,7 +56,9 @@ def run_react_loop(
         - verbose: Whether to print detailed logs during execution.
     """
     # start the message history with the system prompt and user input
-    user_input = templated_user_input.format(s3_raw_bucket=s3_raw_bucket)
+    user_input = templated_user_input.format(
+        s3_raw_bucket=s3_raw_bucket,
+    )
     history = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_input}
@@ -79,40 +82,46 @@ def run_react_loop(
                 temperature=temperature
             )            
             response_text = response.choices[0].message.content
-            if verbose:
-                print(f"\n🤖 Iteration {current_iteration}, LLM text:\n{response_text}")
-                
             # 2. Parse response
             response: ParsedResponse = parse_response(response_text)
-            if response.answer is not None:
-                # We have a final answer, exit the loop
-                if verbose:
-                    print(f"\n🎯 Final Answer:\n{response.answer}")
-                return response.answer
+            if response.done:
+                print(f"\n✅ Done! Final result: {response_text}")
+                # we are done, return the final answer
+                return response_text
             
-            # 3. Execute the code
             if verbose:
+                print(f"\nIteration {current_iteration + 1} response:")
+                print(f"\n📦 Packages to install: {response.packages}")
                 print(f"\n🤔 Reasoning: {response.reasoning}")
-                print(f"\n🛠️ Code: {response.code}")
-                
+                print(f"\n🛠️ Code: {response.code[:100]}")
+            
             # Store the code in a file for human inspection
             code_file_path = os.path.join(llm_folder, 'etl_agent', f"iteration_{current_iteration}_code.py")
             with open(code_file_path, 'w') as code_file:
                 code_file.write(response.code)
-            # Execute the code in a fresh sandbox environment
-            # replace this with your own code executor or implement something like 
+                
+            # 3. Execute the code
+            # Replace this with your own code executor or implement something like 
             # a factory pattern to use different executors
             
-            raise NotImplementedError("You need to implement your own code executor or use the provided E2BCodeExecutor.")
-            
             print("\n Running the code...")
-            executor = E2BCodeExecutor(api_key=eb2_api_key)
-            execution_result = executor.run_code(code=response.code)
+            executor = E2BCodeExecutor(
+                api_key=eb2_api_key, 
+                envs={
+                    'BAUPLAN_API_KEY': bauplan_api_key,
+                    'BAUPLAN_USER_NAME': bauplan_user_name
+                }
+            )
+            execution_result: ExecutorResponse = executor.run_code(
+                code=response.code, 
+                python_packages=response.packages
+            )
             if verbose:
                 print(f"\n📊 Result: {execution_result}")
             # If we are not done, we add the response to the conversation history
+            content = f"Result:{execution_result.result} \nStandard output: {execution_result.stdout} \nError output if any: {execution_result.stderr} \nSandbox error if any: {execution_result.error}"
             history.append({"role": "assistant", "content": response_text})
-            history.append({"role": "user", "content": f"Observation: {execution_result}"})
+            history.append({"role": "user", "content": content})
             # Go to the next iteration
             current_iteration += 1
             print("\n" + "-"*50)
@@ -142,6 +151,7 @@ if __name__ == "__main__":
         s3_raw_bucket=os.environ['S3_BUCKET_RAW_DATA'],
         model_name="together_ai/deepseek-ai/DeepSeek-V3",
         bauplan_api_key=os.environ['BAUPLAN_API_KEY'],
+        bauplan_user_name=os.environ['BAUPLAN_USER_NAME'],
         eb2_api_key=os.environ['E2B_API_KEY'],
         system_prompt=SYSTEM_PROMPT,
         max_iterations=MAX_ITERATIONS,
@@ -154,7 +164,7 @@ if __name__ == "__main__":
         print("❌ Failed to get a valid answer from the agent.")
     else:
         # if we have an answer, we can run the human-in-the-loop verifier function
-        if verify_etl_process(bauplan_api_key=os.environ['BAUPLAN_API_KEY']):
+        if verify_etl_process():
             print("✅ ETL process verified successfully, we can go to the next step!")
         else:
             print("❌ ETL process verification failed.")
