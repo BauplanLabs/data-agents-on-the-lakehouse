@@ -3,7 +3,7 @@ Playground for running agentic workflows over a programmable warehouse
 
 ## Overview
 
-The flow “business question to quick analysis to scale” is notoriously difficult for humans; even before reaching production, data teams are often swamped in repetitive tasks. If data humans are slow, uninspired and perhaps not always up to date with cloud best practices, aren't data agents the right tool for the task? 
+The flow "business question to quick analysis to scale" is notoriously difficult for humans; even before reaching production, data teams are often swamped in repetitive tasks. If data humans are slow, uninspired and perhaps not always up to date with cloud best practices, aren't data agents the right tool for the task? 
 
 We partnered up with [Adyen](https://huggingface.co/datasets/adyen/DABstep) and [TogetherAI](https://www.together.ai/) to explore this question in the context of:
 
@@ -42,7 +42,7 @@ uv sync
 
 You will need to get APIs for the following services:
 
-* [Bauplan](https://app.bauplanlabs.com/sign-up), to manage the data life cycle and run the transformation pipelines;
+* [Bauplan](https://app.bauplanlabs.com/sign-up), to manage the data life cycle and run the transformation pipelines; make sure you generate a key, and [configure your own local profile](https://docs.bauplanlabs.com/en/latest/tutorial/00_installation.html);
 * [TogetherAI](https://www.together.ai/), for calling open source models with great performance;
 * [E2B](https://e2b.dev/), for running the code in a sandbox environment;
 * (Optional) [OpenAI](https://openai.com/) - if you want to use OpenAI models instead of TogetherAI.
@@ -64,7 +64,10 @@ uv run prepare_cloud_setup.py
 
 ### Part 1: the ETL workflow
 
-
+```bash
+cd src/etl_agent
+uv run etl_agent_loop.py
+```
 
 ### Part 2
 

@@ -4,7 +4,6 @@ Collect here the basic prompts for the ETL agent.
 
 """
 
-
 SYSTEM_PROMPT = """You are a ReAct agent that can express code actions. 
 
 CRITICAL FORMAT RULES:
@@ -33,4 +32,9 @@ WORKFLOW:
 REMEMBER: ALWAYS include both <reasoning> and <code> sections in every response until you give the final <answer>.
 
 Start with a <reasoning> section and then a <code> section. When you have the final answer, you must reply with <answer> and then </answer>.
+"""
+
+USER_PROMPT_TEMPLATE = """
+
+{s3_raw_bucket}
 """
