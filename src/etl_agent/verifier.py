@@ -18,9 +18,11 @@ def verify_etl_process() -> bool:
     
     import bauplan
     import pyarrow as pa
-    # this assumed the process can access the usual Bauplan local config file
-    # or that the proper environment variables are set
-    client = bauplan.Client(profile='prod')
+    import os
+    # for testing purposes, we set up the option of specifying a profile
+    # via the BAUPLAN_PROFILE environment variable, otherwise we use the default profile
+    profile = 'default' if 'BAUPLAN_PROFILE' not in os.environ else os.environ['BAUPLAN_PROFILE']
+    client = bauplan.Client(profile=profile)
     branch = 'main'
     # each table corresponds to a file loaded in the raw S3 bucket
     tables = [
