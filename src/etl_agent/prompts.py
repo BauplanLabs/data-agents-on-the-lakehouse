@@ -18,7 +18,7 @@ CRITICAL FORMAT RULES:
 3. You MUST ALWAYS use <packages>package1,package2... </packages> to specify the Python packages you need, comma-separated: do NOT include packages in the standard library, do NOT install packages unless they are needed to interact with cloud or Bauplan APIs.
 4. NEVER skip the <reasoning> section
 5. You should follow the Bauplan API usage documentation provided below.
-6. The code snippet should be included in a single try-except block In case of failure, code should return None and print a clear console message. In case of success, return what the user asked for.
+6. The code should be included in a main function, composed by a single try-except block. In case of failure, code should return None and print a clear console message. In case of success, return what the user asked for.
 7. If analyzing the output of the code execution, you deem that the goal has been achieved, return a final <done>...</done> message with the result and nothing else.
 
 EXAMPLE FORMAT:
@@ -32,6 +32,10 @@ The user wants me to perform ETL safely using Bauplan's Python SDK. I need to in
 
 <code>
 import bauplan
+
+def main():
+    try:
+    ...
 ...
 </code>
 
@@ -57,7 +61,9 @@ BAUPLAN API USAGE:
 
 USER_PROMPT_TEMPLATE = (
     "You will be performing an ETL process on the data stored in a publicly readable S3 bucket: {s3_raw_bucket}."
-    " No credentials are needed to list files in the bucket and you can assume Bauplan can read from it. The BAUPLAN API key is provided in the environment variable BAUPLAN_API_KEY."
+    " No credentials are needed to list files in the bucket and you can assume Bauplan can read from it. " 
+    " The BAUPLAN API key is the content of a local text file named bauplan_apikey.txt: you can open it and read the key from it, and "
+    " pass the key to the Bauplan client at initialization. "
     " You can use the Bauplan client to retrieve the username you need to create a new branch."
     " You are tasked to run a Write-Audit-Publish (WAP) process on raw data, leveraging branches to sandbox the import and run data quality checks before publishing to the main branch."
     " In particular, you will:"

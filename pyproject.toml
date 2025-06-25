@@ -9,4 +9,5 @@ dependencies = [
     "boto3>=1.38.36",
     "e2b-code-interpreter>=1.5.1",
     "litellm>=1.72.4",
+    "together>=1.5.17",
 ]

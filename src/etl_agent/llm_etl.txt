@@ -2,12 +2,12 @@ Bauplan is a Python-first lakehouse, exposing in pure Python methods under the `
 normally found in a lakehouse: create tables, load data, create a data branch, merge a data branch, run a SQL query over a specific
 branch etc.
 
-Everythin in Bauplan happens through the Python client: you usually assume the API key is available as BAUPLAN_API_KEY in the
-environment, so no need to specify it - from the client you can also get your username.
+Everythin in Bauplan happens through the Python client: the API key can either be set as the variable BAUPLAN_API_KEY in the
+environment, or it should be passed explicitely at initialization time - from the client you can also get your username.
 
 ```python
 import bauplan
-bpln_client = bauplan.Client()
+bpln_client = bauplan.Client(api_key=my_bauplan_key)
 user = client.info().user
 username = user.username
 ```
