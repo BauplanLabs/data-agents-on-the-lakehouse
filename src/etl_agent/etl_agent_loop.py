@@ -8,14 +8,13 @@ fix its own mistakes based on the output of executing the actual code.
 
 import os
 from litellm import completion
-from utils import parse_response, ParsedResponse, E2BCodeExecutor, ExecutorResponse
+from utils import parse_response, ParsedResponse, ExecutorResponse, TogetherCodeExecutor
 from dotenv import load_dotenv
 from verifier import verify_etl_process
 from prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 load_dotenv()
-# check the basic envs are here, Bauplan, Together API, E2B
+# check the basic envs are here, Bauplan, Together API
 assert 'BAUPLAN_API_KEY' in os.environ, "BAUPLAN_API_KEY not set in environment variables"
-assert 'E2B_API_KEY' in os.environ, "E2B_API_KEY not set in environment variables"
 assert 'TOGETHER_API_KEY' in os.environ, "TOGETHER_API_KEY not set in environment variables"
 # model specific "global" variables
 # you can change them or abstract them away in a config file
@@ -31,7 +30,6 @@ def run_react_loop(
     model_name: str,
     max_tokens: int,
     temperature: float,
-    eb2_api_key: str,
     system_prompt: str,
     max_iterations: int, 
     llm_folder: str,
@@ -48,7 +46,6 @@ def run_react_loop(
         - model_name: The name of the LLM model to use for completions.
         - max_tokens: The maximum number of tokens for the LLM response.
         - temperature: The temperature for the LLM response.
-        - eb2_api_key: The API key for the E2B Code Interpreter service.
         - system_prompt: The system prompt to guide the agent's behavior.
         - max_iterations: The maximum number of iterations to run the loop.
         - llm_folder: The folder where the generated code will be stored for human inspection.
@@ -104,8 +101,7 @@ def run_react_loop(
             # a factory pattern to use different executors
             
             print("\n Running the code...")
-            executor = E2BCodeExecutor(
-                api_key=eb2_api_key, 
+            executor = TogetherCodeExecutor(
                 envs={'BAUPLAN_API_KEY': bauplan_api_key}
             )
             execution_result: ExecutorResponse = executor.run_code(
@@ -147,7 +143,6 @@ if __name__ == "__main__":
         s3_raw_bucket=os.environ['S3_BUCKET_RAW_DATA'],
         model_name="together_ai/deepseek-ai/DeepSeek-V3",
         bauplan_api_key=os.environ['BAUPLAN_API_KEY'],
-        eb2_api_key=os.environ['E2B_API_KEY'],
         system_prompt=SYSTEM_PROMPT,
         max_iterations=MAX_ITERATIONS,
         max_tokens=MAX_TOKENS,

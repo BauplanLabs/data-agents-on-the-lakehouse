@@ -7,6 +7,8 @@ import re
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from e2b_code_interpreter import Sandbox
+from together import Together
+
 
 # structure to hold parsed response components
 ParsedResponse = namedtuple('ParsedResponse', ['done', 'packages', 'reasoning', 'code'])
@@ -64,8 +66,58 @@ class CodeExecutor(ABC):
     def run_code(self, code: str, python_packages: list = None):
         pass
 
-# We use the E2B Code Interpreter class implementation to run code. You can implement your own 
+
+# We use the TogetherCodeExecutor sandbox class implementation to run code. You can implement your own 
 # executor if you want to use a different provider / method to run code.  
+class TogetherCodeExecutor(CodeExecutor):    
+    
+    def __init__(self, envs: list = None):
+        client = Together()
+        self.envs = envs if envs else {}
+        self.code_interpreter = client.code_interpreter 
+
+    def run_code(self, code: str, python_packages: list = None) -> ExecutorResponse:
+        # pre-pend the code with the necessary imports if needed
+        imports = [f"!pip install {p}" for p in python_packages] if python_packages else []
+        final_code = f"{'\n'.join(imports)}\n{code}" if imports else code
+        # we pass the key as file to the code interpreter: note - this is a workaround
+        # waiting for secret management support in the code interpreter
+        file_to_upload = {
+            "name": "bauplan_apikey.txt",
+            "encoding": "string",
+            "content": self.envs.get('BAUPLAN_API_KEY', '')
+        }
+        response = self.code_interpreter.run(code=final_code, language="python", files=[file_to_upload])
+
+        st_out = []
+        st_err = []
+        results = []
+        for output in response.data.outputs:
+            if output.type == "stdout":
+                line = f"[Code Interpreter] {output.data}"
+                print(line)
+                st_out.append(line)
+            elif output.type == "stderr":
+                line = f"[Code Interpreter] {output.data}"
+                print(line)
+                st_err.append(line)
+            elif output.type == "execute_result":
+                line = f"Result: {output.data}"
+                print(line)
+                results.append(line)
+                
+        if response.data.errors:
+            st_err.append(f"[Code Interpreter] Errors: {response.data.errors}")
+        
+        # Return the results in a structured format
+        return ExecutorResponse(
+            result='\n'.join(results),
+            stdout='\n'.join(st_out),
+            stderr='\n'.join(st_err),
+            error=response.data.errors if response.data.errors else None
+        )
+
+ 
 class E2BCodeExecutor(CodeExecutor):    
     
     def __init__(self, api_key, envs: list = None):
@@ -74,8 +126,6 @@ class E2BCodeExecutor(CodeExecutor):
     def run_code(self, code: str, python_packages: list = None) -> ExecutorResponse:
         with self.sbx:
             # Install any required Python packages
-            # Note that for example in Together AI sandbox you would pre-prend to the code
-            # the line `!pip install <package>` to install packages...
             if python_packages:
                 for pkg in python_packages:
                     self.sbx.commands.run(f"pip install {pkg}")

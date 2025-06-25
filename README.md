@@ -43,8 +43,7 @@ uv sync
 You will need to get APIs for the following services:
 
 * [Bauplan](https://app.bauplanlabs.com/sign-up), to manage the data life cycle and run the transformation pipelines; make sure you generate a key, and [configure your own local profile](https://docs.bauplanlabs.com/en/latest/tutorial/00_installation.html);
-* [TogetherAI](https://www.together.ai/), for calling open source models with great performance;
-* [E2B](https://e2b.dev/), for running the code in a sandbox environment;
+* [TogetherAI](https://www.together.ai/), for calling open source models with great performance and running the code in a sandbox environment;
 * (Optional) [OpenAI](https://openai.com/) - if you want to use OpenAI models instead of TogetherAI.
 
 ### Local .env file
