@@ -20,12 +20,12 @@ As inputs for the workflow, we have:
 
 Note that all of the above represents a very realistic scenario! We broke the full lifecycle into two parts, released in two separate blog posts:
 
-* Part 1: the ETL workflow, which ingests the raw data, performs quality checks automatically, and then invokes human-in-the-loop confirmation to ensure the tables are ready and verified for the next step;
+* Part 1: the [ETL workflow](https://www.bauplanlabs.com/blog/data-engineer-agents), which ingests the raw data, performs quality checks automatically, and then invokes human-in-the-loop confirmation to ensure the tables are ready and verified for the next step;
 * Part 2: the analysis itself, i.e. taking the source tables, and producing working code that return the correct answer to business questions.
 
 Please refer to the companion blog posts for the relevant background information, general architecture, and the overall goals of the project:
 
-- Part 1: TBC, come back soon!
+- Part 1:[Data engineer agents. From Prompt to Pipeline](https://www.bauplanlabs.com/blog/data-engineer-agents)
 - Part 2: TBC, come back soon!
 
 ## Setup
