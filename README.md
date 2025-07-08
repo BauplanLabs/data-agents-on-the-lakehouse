@@ -1,4 +1,6 @@
-# data-agents-on-the-lakehouse
+
+# ![together-bauplan](https://github.com/user-attachments/assets/5ff0d3d0-8dd3-4cdc-b6fc-424514ffb277)
+data-agents-on-the-lakehouse
 Playground for running agentic workflows over a programmable warehouse
 
 ## Overview
